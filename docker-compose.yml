@@ -1,0 +1,15 @@
+web:
+  build: .
+  ports:
+    - '3000:3000'
+  working_dir: /usr/src
+  command: npm start
+  volumes:
+    - ./:/usr/src
+  links:
+    - mongodb
+
+mongodb:
+  image: mongo
+  ports:
+    - '27017:27017'
