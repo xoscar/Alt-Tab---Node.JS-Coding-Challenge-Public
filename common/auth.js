@@ -19,6 +19,8 @@ module.exports.middleware = (req, res, next) => {
     return res.sendStatus(401);
   }
 
+  // Bearer asdadsadsddas .split(' ') ['Bearer', 'asdasdsdasds'][1]
+
   return jwt.verify(token.split(' ')[1], process.env.SESSION_SECRET, { algorithms: ['HS384'] }, (verifyError, jwtPayload) => {
     if (verifyError) {
       return res.sendStatus(401);

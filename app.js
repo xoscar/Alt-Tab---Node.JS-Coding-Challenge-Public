@@ -18,6 +18,7 @@ dotenv.load({ path: '.env' });
  * Create Express server.
  */
 const app = express();
+mongoose.Promise = Promise;
 
 /**
  * Connect to MongoDB.

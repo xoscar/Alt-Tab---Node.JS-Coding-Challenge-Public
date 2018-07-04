@@ -7,6 +7,7 @@ const encryptString = require('../common/utils').encryptString;
 const compareToEncryptedString = require('../common/utils').compareToEncryptedString;
 const auth = require('../common/auth');
 
+// User schema
 const userSchema = new mongoose.Schema({
   email: String,
   password: String,
@@ -44,56 +45,49 @@ userSchema.statics.login = function login(body) {
     return Promise.reject(400);
   }
 
-  return new Promise((resolve, reject) => (
-    this.findOne({
-      email: body.email,
-    }, (err, user) => {
-      if (err || !user) {
-        return reject(401);
-      }
+  return this.findOne({
+    email: body.email,
+  })
 
-      return compareToEncryptedString(user.password, body.password)
+  .then(user => (
+    compareToEncryptedString(user.password, body.password)
 
-        .then(() => (
-          auth.generateJwt({
-            email: user.email,
-            token: user.token,
-            timestamp: Date.now(),
-          })
+    .then(() => (
+      auth.generateJwt({
+        email: user.email,
+        token: user.token,
+        timestamp: Date.now(),
+      })
 
-          .then(token => (
-            resolve(Object.assign(user.getInfo(), {
-              token,
-            }))
-          ))
-        ), () => (
-          reject(401)
-        ))
+      .then(token => (
+        Promise.resolve(Object.assign(user.getInfo(), {
+          token,
+        }))
+      ))
+    ), () => (
+      Promise.reject(401)
+    ))
+  ))
 
-        .catch(() => (
-          reject(500)
-        ));
-    })
+  .catch(() => (
+    Promise.reject(500)
   ));
 };
 
 userSchema.statics.validateToken = function validateToken(body) {
-  return new Promise((resolve, reject) => (
-    this.findOne({
-      email: body.email,
-    }, (err, user) => {
-      if (err || !user) {
-        return reject(401);
-      }
+  return this.findOne({
+    email: body.email,
+  })
 
-      return compareToEncryptedString(user.token, body.token)
+  .then(user => (
+    compareToEncryptedString(user.token, body.token)
 
-        .then(() => (
-          resolve(user)
-        ), () => (
-          reject(401)
-        ));
-    })
+    .then(() => (
+      Promise.resolve(user)
+    ))
+  ))
+  .catch(() => (
+    Promise.reject(401)
   ));
 };
 
@@ -104,22 +98,20 @@ userSchema.statics.create = function create(body) {
     return Promise.reject(400);
   }
 
-  return new Promise((resolve, reject) => (
-    this.findOne({ email: body.email }, (err, user) => {
-      if (err || user) {
-        return reject(400);
-      }
+  return this.findOne({ email: body.email })
 
-      const newUser = new this({
-        email: body.email,
-        password: body.password,
-      });
+  .then((user) => {
+    if (user) {
+      return Promise.reject(400);
+    }
 
-      return newUser.save(() => (
-        resolve(newUser)
-      ));
-    })
-  ));
+    const newUser = new this({
+      email: body.email,
+      password: body.password,
+    });
+
+    return newUser.save();
+  });
 };
 
 module.exports = mongoose.model('users', userSchema);
